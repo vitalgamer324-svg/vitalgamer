@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VITAL HUB | OFFICIAL SYSTEM</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Poppins:wght@300;500;700&display=swap');
+        
+        :root { --primary: #00f2ff; --bg: #020202; --card-bg: rgba(12, 12, 12, 0.98); --danger: #ff0055; --success: #00ff88; }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+        body { background: var(--bg); color: #fff; font-family: 'Poppins', sans-serif; overflow: hidden; background-image: radial-gradient(circle at 50% 50%, #0a0a0a 0%, #000 100%); }
+
+        /* Sidebar RGB Border */
+        .sidebar { width: 280px; height: 100vh; position: fixed; background: #000; border-right: 2px solid var(--primary); padding: 20px 10px; z-index: 1000; overflow-y: auto; transition: 0.3s; }
+        .sidebar::-webkit-scrollbar { width: 3px; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--primary); }
+
+        .main { margin-left: 280px; height: 100vh; padding: 40px; overflow-y: auto; scroll-behavior: smooth; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.4s ease; }
+
+        .brand { font-family: 'Orbitron'; font-size: 1.6rem; color: var(--primary); text-align: center; margin-bottom: 30px; letter-spacing: 3px; font-weight: 900; }
+        
+        .nav-head { padding: 12px 15px; margin-top: 8px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.02); font-size: 0.85rem; transition: 0.3s; color: #bbb; border: 1px solid transparent; }
+        .nav-head:hover { background: rgba(0,242,255,0.1); color: var(--primary); border-color: var(--primary); }
+
+        .sub-menu { padding-left: 15px; margin-top: 5px; border-left: 1px solid #222; margin-left: 20px; }
+        .nav-link { padding: 8px 15px; cursor: pointer; color: #666; font-size: 0.75rem; transition: 0.3s; display: block; border-radius: 5px; }
+        .nav-link:hover { color: var(--primary); background: rgba(0,242,255,0.05); transform: translateX(5px); }
+
+        .card { background: var(--card-bg); border: 1px solid #1a1a1a; padding: 25px; border-radius: 20px; margin-bottom: 20px; position: relative; transition: 0.3s; }
+        .card:hover { border-color: var(--primary); }
+
+        input, textarea, select { width: 100%; padding: 14px; margin-bottom: 15px; background: #080808; border: 1px solid #222; color: #fff; border-radius: 10px; font-family: inherit; }
+        .btn-pro { background: var(--primary); color: #000; border: none; padding: 15px; border-radius: 10px; font-family: 'Orbitron'; font-weight: 900; cursor: pointer; width: 100%; transition: 0.3s; }
+        .btn-pro:hover { box-shadow: 0 0 20px var(--primary); transform: scale(1.02); }
+
+        /* Chat System */
+        .chat-box { height: 350px; overflow-y: auto; background: #050505; border-radius: 12px; padding: 20px; margin-bottom: 15px; display: flex; flex-direction: column; border: 1px solid #111; }
+        .msg { margin-bottom: 12px; padding: 12px 16px; border-radius: 15px; max-width: 80%; font-size: 0.85rem; line-height: 1.5; position: relative; }
+        .msg.user { background: #1a1a1a; align-self: flex-start; border-bottom-left-radius: 2px; color: #eee; }
+        .msg.admin { background: var(--primary); color: #000; align-self: flex-end; border-bottom-right-radius: 2px; font-weight: 500; }
+        
+        .status-badge { font-size: 0.6rem; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; font-weight: 900; letter-spacing: 1px; }
+        .status-open { background: var(--success); color: #000; }
+        .status-closed { background: #333; color: #888; }
+
+        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; }
+        .auth-card { background: #0a0a0a; padding: 50px; border-radius: 30px; width: 400px; border: 2px solid var(--primary); text-align: center; box-shadow: 0 0 50px rgba(0,242,255,0.1); }
+
+        .hidden { display: none !important; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div id="auth-screen">
+        <div class="auth-card">
+            <h2 class="brand">VITAL HUB</h2>
+            <p style="color: #444; font-size: 0.75rem; margin-bottom: 25px;">SECURE ACCESS GATEWAY</p>
+            <input type="email" id="auth-email" placeholder="E-mail Address">
+            <input type="password" id="auth-pass" placeholder="Password">
+            <button class="btn-pro" onclick="processAuth()">ENTER SYSTEM</button>
+            <p id="auth-msg" style="margin-top: 15px; font-size: 0.7rem; color: var(--danger);"></p>
+        </div>
+    </div>
+
+    <div id="app" class="hidden">
+        <aside class="sidebar">
+            <div class="brand">VITAL HUB</div>
+            <div class="nav-head" onclick="nav('home')"><i class="fa fa-home"></i> CORE_DASH</div>
+            
+            <div id="admin-area" class="hidden">
+                <p style="font-size:0.55rem; color:var(--danger); margin:25px 0 5px 15px; font-weight:900; letter-spacing:1px;">ADMINISTRATOR</p>
+                <div class="nav-head" onclick="nav('admin')" style="color:var(--danger);"><i class="fa fa-upload"></i> DEPLOY ASSETS</div>
+                <div class="nav-head" onclick="nav('admin-tk')" style="color:orange;"><i class="fa fa-ticket"></i> MANAGE TICKETS</div>
+            </div>
+
+            <p style="font-size:0.55rem; color:#444; margin:25px 0 5px 15px; font-weight:900; letter-spacing:1px;">MINECRAFT FOLDERS</p>
+            <div id="mc-dynamic-menu" class="sub-menu"></div>
+
+            <p style="font-size:0.55rem; color:#444; margin:25px 0 5px 15px; font-weight:900; letter-spacing:1px;">OTHERS</p>
+            <div class="nav-head" onclick="nav('tickets')"><i class="fa fa-headset"></i> SUPPORT CENTER</div>
+            <div class="nav-head" onclick="window.open('https://discord.gg/Wsqzud83va')"><i class="fab fa-discord"></i> DISCORD</div>
+            
+            <div class="nav-head" onclick="firebase.auth().signOut()" style="margin-top:50px; opacity:0.3;"><i class="fa fa-power-off"></i> DISCONNECT</div>
+        </aside>
+
+        <main class="main">
+            <div id="p-home" class="page active">
+                <h1 style="font-family:'Orbitron'; font-size: 2.5rem;">WELCOME_USER</h1>
+                <p id="user-display" style="color:var(--primary); margin-bottom: 30px;"></p>
+                <div class="grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                    <div class="card"><h3>System Status</h3><p style="color:var(--success)">Encrypted & Live</p></div>
+                    <div class="card"><h3>Active Session</h3><p id="session-time">Authenticating...</p></div>
+                </div>
+            </div>
+
+            <div id="p-vault" class="page">
+                <h1 id="vault-title" style="font-family:'Orbitron'; color:var(--primary);">VAULT</h1>
+                <div id="vault-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; margin-top: 30px;"></div>
+            </div>
+
+            <div id="p-tickets" class="page">
+                <h1 style="font-family:'Orbitron';">TICKET_CONTROL</h1>
+                <div class="card" style="margin-top:25px;">
+                    <input type="text" id="t-sub" placeholder="Subject of Issue">
+                    <textarea id="t-msg" placeholder="Describe the problem..." rows="4"></textarea>
+                    <input type="text" id="t-img" placeholder="Attachment Image URL (Optional)">
+                    <button class="btn-pro" onclick="submitTicket()">OPEN NEW TICKET</button>
+                </div>
+                <div id="my-tickets-list" style="margin-top: 30px;"></div>
+            </div>
+
+            <div id="p-admin" class="page">
+                <h1 style="font-family:'Orbitron'; color:var(--danger);">PUSH_ASSETS</h1>
+                <div class="card" style="margin-top:25px; border-color: var(--danger);">
+                    <select id="a-cat"></select>
+                    <input type="text" id="a-name" placeholder="Item Name">
+                    <input type="text" id="a-link" placeholder="Download URL">
+                    <textarea id="a-desc" placeholder="Asset Details..."></textarea>
+                    <button class="btn-pro" style="background:var(--danger); color:#fff;" onclick="deploy()">PUBLISH TO VAULT</button>
+                </div>
+            </div>
+
+            <div id="p-admin-tk" class="page">
+                <h1 style="font-family:'Orbitron'; color:orange;">CENTRAL_INBOX</h1>
+                <div id="admin-tk-list" style="margin-top: 25px;"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- ক্যাটাগরি কনফিগারেশন (এখানে যত খুশি অ্যাড করো) ---
+        const mcPages = [
+            { id: 'mc-lifesteal', name: 'Lifesteal SMP' },
+            { id: 'mc-survival', name: 'Survival Hub' },
+            { id: 'mc-skyblock', name: 'Skyblock Custom' },
+            { id: 'mc-plugins', name: 'Paid Plugins' },
+            { id: 'mc-maps', name: 'Adventure Maps' }
+        ];
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB3-dzUWQjDc7NO1eKGIPZr7of6il3tiIw",
+            authDomain: "vital-gamer-web.firebaseapp.com",
+            databaseURL: "https://vital-gamer-web-default-rtdb.firebaseio.com",
+            projectId: "vital-gamer-web",
+            storageBucket: "vital-gamer-web.firebasestorage.app",
+            messagingSenderId: "673058017847",
+            appId: "1:673058017847:web:fad6c1b490cdab7b67e5b2"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const auth = firebase.auth();
+
+        // --- Auth Logic ---
+        function processAuth() {
+            const e = document.getElementById('auth-email').value;
+            const p = document.getElementById('auth-pass').value;
+            if(!e || p.length < 6) return alert("Email valid hoite hobe & Pass min 6 digits!");
+            
+            auth.signInWithEmailAndPassword(e, p).catch(() => {
+                auth.createUserWithEmailAndPassword(e, p).catch(err => alert(err.message));
+            });
+        }
+
+        // --- Navigation ---
+        function nav(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('p-' + id).classList.add('active');
+        }
+
+        // --- Generator ---
+        function initSystem() {
+            const menu = document.getElementById('mc-dynamic-menu');
+            const select = document.getElementById('a-cat');
+            menu.innerHTML = ""; select.innerHTML = "";
+            mcPages.forEach(p => {
+                menu.innerHTML += `<div class="nav-link" onclick="openVault('${p.id}', '${p.name}')"><i class="fa fa-cube" style="font-size:0.6rem"></i> ${p.name}</div>`;
+                select.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+            });
+        }
+
+        // --- Vault Logic ---
+        function openVault(slug, title) {
+            nav('vault');
+            document.getElementById('vault-title').innerText = title.toUpperCase();
+            db.ref('vault/' + slug).on('value', snap => {
+                const grid = document.getElementById('vault-grid');
+                grid.innerHTML = "";
+                snap.forEach(child => {
+                    const d = child.val();
+                    grid.innerHTML += `
+                        <div class="card">
+                            ${auth.currentUser.email === 'admin@gmail.com' ? `<i class="fa fa-trash" style="position:absolute; top:20px; right:20px; color:red; cursor:pointer" onclick="db.ref('vault/${slug}/${child.key}').remove()"></i>` : ''}
+                            <h3 style="color:var(--primary); font-family:'Orbitron'; font-size:1rem;">${d.name}</h3>
+                            <p style="font-size:0.75rem; color:#666; margin:15px 0; line-height:1.4">${d.desc}</p>
+                            <button class="btn-pro" style="padding:10px;" onclick="window.open('${d.link}')">DOWNLOAD ASSET</button>
+                        </div>`;
+                });
+            });
+        }
+
+        // --- Ticket Engine ---
+        function submitTicket() {
+            const sub = document.getElementById('t-sub').value;
+            const msg = document.getElementById('t-msg').value;
+            const img = document.getElementById('t-img').value;
+            if(!sub || !msg) return alert("Subject and Message are required!");
+
+            const tid = Date.now();
+            db.ref('tickets/' + tid).set({
+                tid, uid: auth.currentUser.uid, email: auth.currentUser.email,
+                subject: sub, status: 'open',
+                chats: [{ sender: 'user', msg: msg, img: img || null, time: tid }]
+            }).then(() => {
+                alert("Ticket Submitted Successfully!");
+                document.getElementById('t-sub').value = ""; document.getElementById('t-msg').value = ""; document.getElementById('t-img').value = "";
+            });
+        }
+
+        function sendChat(tid, role) {
+            const input = document.getElementById('chat-in-' + tid);
+            if(!input.value) return;
+            const ref = db.ref('tickets/' + tid + '/chats');
+            ref.once('value', snap => {
+                const chats = snap.val() || [];
+                chats.push({ sender: role, msg: input.value, time: Date.now() });
+                ref.set(chats).then(() => input.value = "");
+            });
+        }
+
+        function renderTicketBox(snap, container, role) {
+            const t = snap.val();
+            let chatHtml = "";
+            t.chats.forEach(c => {
+                chatHtml += `
+                    <div class="msg ${c.sender}">
+                        ${c.msg}
+                        ${c.img ? `<br><img src="${c.img}" style="max-width:100%; border-radius:10px; margin-top:10px; border:1px solid #333;">` : ''}
+                    </div>`;
+            });
+
+            container.innerHTML += `
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <span class="status-badge status-${t.status}">${t.status}</span>
+                        <span style="font-size:0.6rem; color:#444;">${t.email}</span>
+                        ${role === 'admin' ? `
+                            <div style="display:flex; gap:10px;">
+                                <i class="fa fa-check-circle" style="color:var(--success); cursor:pointer" onclick="db.ref('tickets/${t.tid}/status').set('closed')"></i>
+                                <i class="fa fa-trash" style="color:red; cursor:pointer" onclick="db.ref('tickets/${t.tid}').remove()"></i>
+                            </div>` : ''}
+                    </div>
+                    <h3 style="margin-bottom:15px; font-size:1.1rem;">${t.subject}</h3>
+                    <div class="chat-box" id="box-${t.tid}">${chatHtml}</div>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="chat-in-${t.tid}" placeholder="Type reply..." style="margin-bottom:0">
+                        <button class="btn-pro" style="width:100px; padding:10px;" onclick="sendChat('${t.tid}', '${role}')">SEND</button>
+                    </div>
+                </div>`;
+        }
+
+        // --- Admin Deploy ---
+        function deploy() {
+            const cat = document.getElementById('a-cat').value;
+            db.ref('vault/' + cat).push({
+                name: document.getElementById('a-name').value,
+                link: document.getElementById('a-link').value,
+                desc: document.getElementById('a-desc').value
+            }).then(() => {
+                alert("Deployed Successfully!");
+                document.getElementById('a-name').value = ""; document.getElementById('a-link').value = ""; document.getElementById('a-desc').value = "";
+            });
+        }
+
+        // --- Session Management ---
+        auth.onAuthStateChanged(user => {
+            if(user) {
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+                document.getElementById('user-display').innerText = "Logged in as: " + user.email;
+                document.getElementById('session-time').innerText = new Date().toLocaleString();
+                initSystem();
+
+                // Load My Tickets
+                db.ref('tickets').orderByChild('uid').equalTo(user.uid).on('value', s => {
+                    const list = document.getElementById('my-tickets-list');
+                    list.innerHTML = "";
+                    s.forEach(c => renderTicketBox(c, list, 'user'));
+                });
+
+                // Load Admin Panel
+                if(user.email === 'admin@gmail.com') {
+                    document.getElementById('admin-area').classList.remove('hidden');
+                    db.ref('tickets').on('value', s => {
+                        const list = document.getElementById('admin-tk-list');
+                        list.innerHTML = "";
+                        s.forEach(c => renderTicketBox(c, list, 'admin'));
+                    });
+                }
+            } else {
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('app').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
