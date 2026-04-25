@@ -3,152 +3,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VITAL HUB | OFFICIAL SYSTEM</title>
+    <title>VITAL HUB | OMNI-SYSTEM</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Poppins:wght@300;500;700&display=swap');
-        
-        :root { --primary: #00f2ff; --bg: #020202; --card-bg: rgba(12, 12, 12, 0.98); --danger: #ff0055; --success: #00ff88; }
-        
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Rajdhani:wght@500;700&display=swap');
+
+        :root {
+            --rainbow: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+            --neon-blue: #00f2ff;
+            --bg-dark: #020202;
+            --glass: rgba(15, 15, 15, 0.9);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
-        body { background: var(--bg); color: #fff; font-family: 'Poppins', sans-serif; overflow: hidden; background-image: radial-gradient(circle at 50% 50%, #0a0a0a 0%, #000 100%); }
+        body { 
+            background: var(--bg-dark); color: #fff; font-family: 'Rajdhani', sans-serif; 
+            overflow: hidden; height: 100vh;
+        }
 
-        /* Sidebar RGB Border */
-        .sidebar { width: 280px; height: 100vh; position: fixed; background: #000; border-right: 2px solid var(--primary); padding: 20px 10px; z-index: 1000; overflow-y: auto; transition: 0.3s; }
+        /* RAINBOW BACKGROUND EFFECT */
+        .bg-overlay {
+            position: fixed; inset: 0; z-index: -1;
+            background: url('https://wallpaperaccess.com/full/2454552.jpg') center/cover;
+            filter: brightness(0.3) saturate(1.5);
+        }
+        .rainbow-line {
+            position: fixed; top: 0; left: 0; width: 100%; height: 3px;
+            background: var(--rainbow); background-size: 200%;
+            animation: rainbowMove 3s linear infinite; z-index: 10001;
+        }
+        @keyframes rainbowMove { 0% { background-position: 0%; } 100% { background-position: 200%; } }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 280px; height: 100vh; position: fixed; background: rgba(0,0,0,0.95);
+            border-right: 1px solid rgba(255,255,255,0.1); padding: 20px; z-index: 1000;
+            overflow-y: auto; backdrop-filter: blur(15px);
+        }
         .sidebar::-webkit-scrollbar { width: 3px; }
-        .sidebar::-webkit-scrollbar-thumb { background: var(--primary); }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--neon-blue); }
 
-        .main { margin-left: 280px; height: 100vh; padding: 40px; overflow-y: auto; scroll-behavior: smooth; }
-        .page { display: none; }
-        .page.active { display: block; animation: fadeIn 0.4s ease; }
+        .brand { 
+            font-family: 'Orbitron'; font-size: 1.5rem; text-align: center; 
+            margin-bottom: 30px; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue);
+        }
 
-        .brand { font-family: 'Orbitron'; font-size: 1.6rem; color: var(--primary); text-align: center; margin-bottom: 30px; letter-spacing: 3px; font-weight: 900; }
+        .nav-cat { font-size: 0.65rem; color: #555; font-weight: 900; margin: 25px 0 10px 10px; letter-spacing: 2px; }
+        .nav-item { 
+            padding: 12px 15px; margin: 5px 0; border-radius: 8px; cursor: pointer; 
+            display: flex; align-items: center; gap: 12px; color: #aaa; transition: 0.3s;
+            background: rgba(255,255,255,0.02); border: 1px solid transparent;
+        }
+        .nav-item:hover, .nav-item.active { 
+            color: #fff; background: rgba(0, 242, 255, 0.1); border-color: rgba(0,242,255,0.3);
+            transform: translateX(5px);
+        }
+
+        /* MAIN CONTENT */
+        .main { margin-left: 280px; height: 100vh; padding: 40px; overflow-y: auto; }
+        .page { display: none; animation: fadeIn 0.5s ease-out; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* CARDS & UI */
+        .card { 
+            background: var(--glass); border: 1px solid rgba(255,255,255,0.05); 
+            padding: 25px; border-radius: 15px; position: relative; margin-bottom: 20px;
+            transition: 0.3s;
+        }
+        .card:hover { border-color: var(--neon-blue); box-shadow: 0 0 20px rgba(0,242,255,0.1); }
         
-        .nav-head { padding: 12px 15px; margin-top: 8px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.02); font-size: 0.85rem; transition: 0.3s; color: #bbb; border: 1px solid transparent; }
-        .nav-head:hover { background: rgba(0,242,255,0.1); color: var(--primary); border-color: var(--primary); }
-
-        .sub-menu { padding-left: 15px; margin-top: 5px; border-left: 1px solid #222; margin-left: 20px; }
-        .nav-link { padding: 8px 15px; cursor: pointer; color: #666; font-size: 0.75rem; transition: 0.3s; display: block; border-radius: 5px; }
-        .nav-link:hover { color: var(--primary); background: rgba(0,242,255,0.05); transform: translateX(5px); }
-
-        .card { background: var(--card-bg); border: 1px solid #1a1a1a; padding: 25px; border-radius: 20px; margin-bottom: 20px; position: relative; transition: 0.3s; }
-        .card:hover { border-color: var(--primary); }
-
-        input, textarea, select { width: 100%; padding: 14px; margin-bottom: 15px; background: #080808; border: 1px solid #222; color: #fff; border-radius: 10px; font-family: inherit; }
-        .btn-pro { background: var(--primary); color: #000; border: none; padding: 15px; border-radius: 10px; font-family: 'Orbitron'; font-weight: 900; cursor: pointer; width: 100%; transition: 0.3s; }
-        .btn-pro:hover { box-shadow: 0 0 20px var(--primary); transform: scale(1.02); }
-
-        /* Chat System */
-        .chat-box { height: 350px; overflow-y: auto; background: #050505; border-radius: 12px; padding: 20px; margin-bottom: 15px; display: flex; flex-direction: column; border: 1px solid #111; }
-        .msg { margin-bottom: 12px; padding: 12px 16px; border-radius: 15px; max-width: 80%; font-size: 0.85rem; line-height: 1.5; position: relative; }
-        .msg.user { background: #1a1a1a; align-self: flex-start; border-bottom-left-radius: 2px; color: #eee; }
-        .msg.admin { background: var(--primary); color: #000; align-self: flex-end; border-bottom-right-radius: 2px; font-weight: 500; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
         
-        .status-badge { font-size: 0.6rem; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; font-weight: 900; letter-spacing: 1px; }
-        .status-open { background: var(--success); color: #000; }
-        .status-closed { background: #333; color: #888; }
+        .btn-rainbow {
+            background: var(--rainbow); background-size: 200%; border: none; color: #fff;
+            padding: 12px 25px; border-radius: 8px; font-family: 'Orbitron'; cursor: pointer;
+            transition: 0.3s; font-weight: 900; width: 100%;
+        }
+        .btn-rainbow:hover { background-position: 100%; transform: scale(1.02); }
 
-        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; }
-        .auth-card { background: #0a0a0a; padding: 50px; border-radius: 30px; width: 400px; border: 2px solid var(--primary); text-align: center; box-shadow: 0 0 50px rgba(0,242,255,0.1); }
+        /* ADMIN PANEL BOXES */
+        .admin-box { 
+            border: 1px solid #222; border-radius: 15px; padding: 20px; margin-bottom: 30px; 
+            background: rgba(0,0,0,0.5);
+        }
+        .admin-box h2 { font-family: 'Orbitron'; margin-bottom: 20px; font-size: 1rem; border-bottom: 1px solid #333; padding-bottom: 10px; }
+
+        input, textarea, select {
+            width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid #333;
+            color: #fff; border-radius: 8px; font-family: inherit;
+        }
+
+        .code-block {
+            background: #000; color: #00ff00; padding: 15px; border-radius: 8px;
+            font-family: monospace; overflow-x: auto; position: relative; border: 1px solid #1a1a1a;
+            margin: 10px 0; max-height: 200px;
+        }
+        .copy-btn { position: absolute; top: 10px; right: 10px; cursor: pointer; color: var(--neon-blue); }
+
+        /* AUTH SCREEN */
+        #auth-screen {
+            position: fixed; inset: 0; background: #000; z-index: 10000;
+            display: flex; align-items: center; justify-content: center;
+        }
 
         .hidden { display: none !important; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
+    <div class="rainbow-line"></div>
+    <div class="bg-overlay"></div>
+
     <div id="auth-screen">
-        <div class="auth-card">
-            <h2 class="brand">VITAL HUB</h2>
-            <p style="color: #444; font-size: 0.75rem; margin-bottom: 25px;">SECURE ACCESS GATEWAY</p>
-            <input type="email" id="auth-email" placeholder="E-mail Address">
-            <input type="password" id="auth-pass" placeholder="Password">
-            <button class="btn-pro" onclick="processAuth()">ENTER SYSTEM</button>
-            <p id="auth-msg" style="margin-top: 15px; font-size: 0.7rem; color: var(--danger);"></p>
+        <div class="card" style="width: 380px; text-align: center;">
+            <h1 class="brand">VITAL LOGIN</h1>
+            <input type="email" id="log-email" placeholder="ADMIN/USER EMAIL">
+            <input type="password" id="log-pass" placeholder="PASSWORD">
+            <button class="btn-rainbow" onclick="handleAuth()">INITIALIZE</button>
         </div>
     </div>
 
     <div id="app" class="hidden">
         <aside class="sidebar">
             <div class="brand">VITAL HUB</div>
-            <div class="nav-head" onclick="nav('home')"><i class="fa fa-home"></i> CORE_DASH</div>
             
-            <div id="admin-area" class="hidden">
-                <p style="font-size:0.55rem; color:var(--danger); margin:25px 0 5px 15px; font-weight:900; letter-spacing:1px;">ADMINISTRATOR</p>
-                <div class="nav-head" onclick="nav('admin')" style="color:var(--danger);"><i class="fa fa-upload"></i> DEPLOY ASSETS</div>
-                <div class="nav-head" onclick="nav('admin-tk')" style="color:orange;"><i class="fa fa-ticket"></i> MANAGE TICKETS</div>
+            <div class="nav-item active" onclick="showPage('home')"><i class="fa fa-home"></i> DASHBOARD</div>
+            <div class="nav-item" onclick="showPage('shop')"><i class="fa fa-shopping-cart"></i> GLOBAL SHOP</div>
+
+            <p class="nav-cat">MINECRAFT</p>
+            <div class="nav-item" onclick="loadSection('mc', 'setups')"><i class="fa fa-layer-group"></i> Setups</div>
+            <div class="nav-item" onclick="loadSection('mc', 'plugins')"><i class="fa fa-plug"></i> Plugins</div>
+            <div class="nav-item" onclick="loadSection('mc', 'skripts')"><i class="fa fa-code"></i> Skripts</div>
+            <div class="nav-item" onclick="loadSection('mc', 'docs')"><i class="fa fa-file-alt"></i> Documentation</div>
+            <div class="nav-item" onclick="loadSection('mc', 'configs')"><i class="fa fa-cog"></i> Configs</div>
+
+            <p class="nav-cat">ROBLOX</p>
+            <div class="nav-item" onclick="loadSection('rbx', 'skripts')"><i class="fa fa-scroll"></i> Scripts</div>
+            <div class="nav-item" onclick="loadSection('rbx', 'mods')"><i class="fa fa-hammer"></i> Mods</div>
+            <div class="nav-item" onclick="loadSection('rbx', 'avatar')"><i class="fa fa-user-circle"></i> Avatars</div>
+            <div class="nav-item" onclick="loadSection('rbx', 'promo')"><i class="fa fa-ticket-alt"></i> Promo Codes</div>
+
+            <p class="nav-cat">DISCORD</p>
+            <div class="nav-item" onclick="loadSection('dc', 'bots')"><i class="fa fa-robot"></i> Bots</div>
+            <div class="nav-item" onclick="loadSection('dc', 'themes')"><i class="fa fa-palette"></i> Themes</div>
+            <div class="nav-item" onclick="loadSection('dc', 'anticheat')"><i class="fa fa-shield-virus"></i> Anti Cheat</div>
+
+            <div id="admin-nav" class="hidden">
+                <p class="nav-cat" style="color:red">ADMIN TERMINAL</p>
+                <div class="nav-item" onclick="showPage('admin')" style="color:red"><i class="fa fa-user-shield"></i> MASTER CONTROL</div>
             </div>
 
-            <p style="font-size:0.55rem; color:#444; margin:25px 0 5px 15px; font-weight:900; letter-spacing:1px;">MINECRAFT FOLDERS</p>
-            <div id="mc-dynamic-menu" class="sub-menu"></div>
-
-            <p style="font-size:0.55rem; color:#444; margin:25px 0 5px 15px; font-weight:900; letter-spacing:1px;">OTHERS</p>
-            <div class="nav-head" onclick="nav('tickets')"><i class="fa fa-headset"></i> SUPPORT CENTER</div>
-            <div class="nav-head" onclick="window.open('https://discord.gg/Wsqzud83va')"><i class="fab fa-discord"></i> DISCORD</div>
-            
-            <div class="nav-head" onclick="firebase.auth().signOut()" style="margin-top:50px; opacity:0.3;"><i class="fa fa-power-off"></i> DISCONNECT</div>
+            <div class="nav-item" onclick="firebase.auth().signOut()" style="margin-top:50px; opacity:0.5;"><i class="fa fa-power-off"></i> LOGOUT</div>
         </aside>
 
         <main class="main">
             <div id="p-home" class="page active">
-                <h1 style="font-family:'Orbitron'; font-size: 2.5rem;">WELCOME_USER</h1>
-                <p id="user-display" style="color:var(--primary); margin-bottom: 30px;"></p>
-                <div class="grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                    <div class="card"><h3>System Status</h3><p style="color:var(--success)">Encrypted & Live</p></div>
-                    <div class="card"><h3>Active Session</h3><p id="session-time">Authenticating...</p></div>
+                <h1 style="font-family:'Orbitron'; font-size:3.5rem;">VITAL<span style="color:var(--neon-blue)">_HUB</span></h1>
+                <div class="card" id="announcement-box" style="margin-top:30px; border-left: 5px solid var(--neon-blue);">
+                    <h3 style="color:var(--neon-blue)">ANNOUNCEMENT</h3>
+                    <p id="ann-text">Welcome to the Omni-System. All modules are functional.</p>
                 </div>
             </div>
 
-            <div id="p-vault" class="page">
-                <h1 id="vault-title" style="font-family:'Orbitron'; color:var(--primary);">VAULT</h1>
-                <div id="vault-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; margin-top: 30px;"></div>
+            <div id="p-shop" class="page">
+                <h1 style="font-family:'Orbitron'; margin-bottom:30px;">VITAL_SHOP</h1>
+                <div id="shop-list" class="grid"></div>
             </div>
 
-            <div id="p-tickets" class="page">
-                <h1 style="font-family:'Orbitron';">TICKET_CONTROL</h1>
-                <div class="card" style="margin-top:25px;">
-                    <input type="text" id="t-sub" placeholder="Subject of Issue">
-                    <textarea id="t-msg" placeholder="Describe the problem..." rows="4"></textarea>
-                    <input type="text" id="t-img" placeholder="Attachment Image URL (Optional)">
-                    <button class="btn-pro" onclick="submitTicket()">OPEN NEW TICKET</button>
-                </div>
-                <div id="my-tickets-list" style="margin-top: 30px;"></div>
+            <div id="p-content" class="page">
+                <h1 id="content-title" style="font-family:'Orbitron'; color:var(--neon-blue); margin-bottom:30px;">CATEGORY</h1>
+                <div id="content-list" class="grid"></div>
             </div>
 
             <div id="p-admin" class="page">
-                <h1 style="font-family:'Orbitron'; color:var(--danger);">PUSH_ASSETS</h1>
-                <div class="card" style="margin-top:25px; border-color: var(--danger);">
-                    <select id="a-cat"></select>
-                    <input type="text" id="a-name" placeholder="Item Name">
-                    <input type="text" id="a-link" placeholder="Download URL">
-                    <textarea id="a-desc" placeholder="Asset Details..."></textarea>
-                    <button class="btn-pro" style="background:var(--danger); color:#fff;" onclick="deploy()">PUBLISH TO VAULT</button>
+                <h1 style="font-family:'Orbitron'; color:red; margin-bottom:30px;">MASTER_CONTROL</h1>
+                
+                <div class="admin-box">
+                    <h2>SYSTEM ANNOUNCEMENT</h2>
+                    <input type="text" id="adm-ann" placeholder="Update global message...">
+                    <button class="btn-rainbow" onclick="updateAnn()">POST ANNOUNCEMENT</button>
                 </div>
-            </div>
 
-            <div id="p-admin-tk" class="page">
-                <h1 style="font-family:'Orbitron'; color:orange;">CENTRAL_INBOX</h1>
-                <div id="admin-tk-list" style="margin-top: 25px;"></div>
+                <div class="admin-box">
+                    <h2 style="color:var(--neon-blue)">MINECRAFT UPLOADER</h2>
+                    <select id="amc-type">
+                        <option value="setups">Setups</option><option value="plugins">Plugins</option>
+                        <option value="skripts">Skripts</option><option value="docs">Docs</option><option value="configs">Configs</option>
+                    </select>
+                    <input type="text" id="amc-name" placeholder="Name">
+                    <input type="text" id="amc-link" placeholder="Download Link / URL">
+                    <input type="text" id="amc-img" placeholder="Image URL">
+                    <input type="text" id="amc-work" placeholder="What does it do? (For Plugins)">
+                    <textarea id="amc-code" placeholder="Code Block (For Skripts/Docs)"></textarea>
+                    <textarea id="amc-desc" placeholder="Description"></textarea>
+                    <button class="btn-rainbow" onclick="uploadData('mc', 'amc')">DEPLOY TO MINECRAFT</button>
+                </div>
+
+                <div class="admin-box">
+                    <h2 style="color:#00ff00">ROBLOX UPLOADER</h2>
+                    <select id="arbx-type">
+                        <option value="skripts">Scripts</option><option value="mods">Mods</option>
+                        <option value="avatar">Avatar Link</option><option value="promo">Promo Code</option>
+                    </select>
+                    <input type="text" id="arbx-name" placeholder="Name / Promo Code Title">
+                    <input type="text" id="arbx-link" placeholder="Link / Promo Code itself">
+                    <input type="text" id="arbx-img" placeholder="Image URL">
+                    <textarea id="arbx-code" placeholder="Script Code"></textarea>
+                    <textarea id="arbx-desc" placeholder="Description"></textarea>
+                    <button class="btn-rainbow" onclick="uploadData('rbx', 'arbx')">DEPLOY TO ROBLOX</button>
+                </div>
+
+                <div class="admin-box">
+                    <h2 style="color:#7289da">DISCORD UPLOADER</h2>
+                    <select id="adc-type">
+                        <option value="bots">Bots</option><option value="themes">Themes</option><option value="anticheat">Anti Cheat</option>
+                    </select>
+                    <input type="text" id="adc-name" placeholder="Name">
+                    <input type="text" id="adc-link" placeholder="Invite Link / File URL">
+                    <input type="text" id="adc-img" placeholder="Image URL / Icon">
+                    <input type="text" id="adc-work" placeholder="Functionality">
+                    <textarea id="adc-desc" placeholder="Description"></textarea>
+                    <button class="btn-rainbow" onclick="uploadData('dc', 'adc')">DEPLOY TO DISCORD</button>
+                </div>
+
+                <div class="admin-box">
+                    <h2 style="color:gold">SHOP MANAGER</h2>
+                    <input type="text" id="ash-name" placeholder="Item Name">
+                    <input type="text" id="ash-img" placeholder="Image URL">
+                    <input type="text" id="ash-pay" placeholder="Payment Methods (e.g. Bkash, Crypto)">
+                    <textarea id="ash-buy" placeholder="How to buy steps..."></textarea>
+                    <button class="btn-rainbow" onclick="uploadShop()">ADD TO SHOP</button>
+                </div>
+
+                <div class="admin-box">
+                    <h2 style="color:red">ACTIVE DEPLOYMENTS (Manage/Delete)</h2>
+                    <div id="master-manage-list"></div>
+                </div>
             </div>
         </main>
     </div>
 
     <script>
-        // --- ক্যাটাগরি কনফিগারেশন (এখানে যত খুশি অ্যাড করো) ---
-        const mcPages = [
-            { id: 'mc-lifesteal', name: 'Lifesteal SMP' },
-            { id: 'mc-survival', name: 'Survival Hub' },
-            { id: 'mc-skyblock', name: 'Skyblock Custom' },
-            { id: 'mc-plugins', name: 'Paid Plugins' },
-            { id: 'mc-maps', name: 'Adventure Maps' }
-        ];
-
+        const ADMIN_EMAIL = "admin@gmail.com";
         const firebaseConfig = {
             apiKey: "AIzaSyB3-dzUWQjDc7NO1eKGIPZr7of6il3tiIw",
             authDomain: "vital-gamer-web.firebaseapp.com",
@@ -162,152 +265,126 @@
         const db = firebase.database();
         const auth = firebase.auth();
 
-        // --- Auth Logic ---
-        function processAuth() {
-            const e = document.getElementById('auth-email').value;
-            const p = document.getElementById('auth-pass').value;
-            if(!e || p.length < 6) return alert("Email valid hoite hobe & Pass min 6 digits!");
-            
-            auth.signInWithEmailAndPassword(e, p).catch(() => {
-                auth.createUserWithEmailAndPassword(e, p).catch(err => alert(err.message));
-            });
+        // 1. AUTH
+        function handleAuth() {
+            const e = document.getElementById('log-email').value, p = document.getElementById('log-pass').value;
+            auth.signInWithEmailAndPassword(e, p).catch(() => auth.createUserWithEmailAndPassword(e, p));
         }
 
-        // --- Navigation ---
-        function nav(id) {
+        // 2. NAVIGATION
+        function showPage(id) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById('p-' + id).classList.add('active');
+            if(id === 'shop') loadShop();
+            if(id === 'admin') loadManageList();
         }
 
-        // --- Generator ---
-        function initSystem() {
-            const menu = document.getElementById('mc-dynamic-menu');
-            const select = document.getElementById('a-cat');
-            menu.innerHTML = ""; select.innerHTML = "";
-            mcPages.forEach(p => {
-                menu.innerHTML += `<div class="nav-link" onclick="openVault('${p.id}', '${p.name}')"><i class="fa fa-cube" style="font-size:0.6rem"></i> ${p.name}</div>`;
-                select.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+        // 3. ADMIN ACTIONS
+        function updateAnn() {
+            db.ref('system/ann').set(document.getElementById('adm-ann').value);
+            Swal.fire('Updated!', '', 'success');
+        }
+
+        function uploadData(domain, prefix) {
+            const type = document.getElementById(prefix+'-type').value;
+            const data = {
+                name: document.getElementById(prefix+'-name').value,
+                link: document.getElementById(prefix+'-link').value,
+                img: document.getElementById(prefix+'-img').value,
+                desc: document.getElementById(prefix+'-desc').value,
+                work: document.getElementById(prefix+'-work') ? document.getElementById(prefix+'-work').value : '',
+                code: document.getElementById(prefix+'-code') ? document.getElementById(prefix+'-code').value : '',
+                timestamp: Date.now()
+            };
+            db.ref(`data/${domain}/${type}`).push(data).then(() => {
+                Swal.fire('Deployed!', '', 'success');
+                loadManageList();
             });
         }
 
-        // --- Vault Logic ---
-        function openVault(slug, title) {
-            nav('vault');
-            document.getElementById('vault-title').innerText = title.toUpperCase();
-            db.ref('vault/' + slug).on('value', snap => {
-                const grid = document.getElementById('vault-grid');
-                grid.innerHTML = "";
-                snap.forEach(child => {
+        function uploadShop() {
+            const data = {
+                name: document.getElementById('ash-name').value,
+                img: document.getElementById('ash-img').value,
+                pay: document.getElementById('ash-pay').value,
+                buy: document.getElementById('ash-buy').value
+            };
+            db.ref('shop').push(data).then(() => Swal.fire('Added to Shop!', '', 'success'));
+        }
+
+        // 4. LOADERS
+        function loadSection(domain, type) {
+            showPage('content');
+            document.getElementById('content-title').innerText = `${domain.toUpperCase()} | ${type.toUpperCase()}`;
+            db.ref(`data/${domain}/${type}`).on('value', s => {
+                const list = document.getElementById('content-list'); list.innerHTML = "";
+                s.forEach(child => {
                     const d = child.val();
-                    grid.innerHTML += `
+                    list.innerHTML += `
                         <div class="card">
-                            ${auth.currentUser.email === 'admin@gmail.com' ? `<i class="fa fa-trash" style="position:absolute; top:20px; right:20px; color:red; cursor:pointer" onclick="db.ref('vault/${slug}/${child.key}').remove()"></i>` : ''}
-                            <h3 style="color:var(--primary); font-family:'Orbitron'; font-size:1rem;">${d.name}</h3>
-                            <p style="font-size:0.75rem; color:#666; margin:15px 0; line-height:1.4">${d.desc}</p>
-                            <button class="btn-pro" style="padding:10px;" onclick="window.open('${d.link}')">DOWNLOAD ASSET</button>
+                            <img src="${d.img || 'https://via.placeholder.com/300x150'}" style="width:100%; height:150px; object-fit:cover; border-radius:10px; margin-bottom:15px;">
+                            <h3>${d.name}</h3>
+                            <p style="color:#888; font-size:0.8rem; margin:10px 0;">${d.desc}</p>
+                            ${d.work ? `<p style="color:var(--neon-blue); font-size:0.75rem;"><b>Work:</b> ${d.work}</p>` : ''}
+                            ${d.code ? `
+                                <div class="code-block" id="c-${child.key}">${d.code}
+                                    <i class="fa fa-copy copy-btn" onclick="copyCode('c-${child.key}')"></i>
+                                </div>` : ''}
+                            <button class="btn-rainbow" style="margin-top:15px;" onclick="window.open('${d.link}')">ACCESS ${type.toUpperCase()}</button>
                         </div>`;
                 });
             });
         }
 
-        // --- Ticket Engine ---
-        function submitTicket() {
-            const sub = document.getElementById('t-sub').value;
-            const msg = document.getElementById('t-msg').value;
-            const img = document.getElementById('t-img').value;
-            if(!sub || !msg) return alert("Subject and Message are required!");
-
-            const tid = Date.now();
-            db.ref('tickets/' + tid).set({
-                tid, uid: auth.currentUser.uid, email: auth.currentUser.email,
-                subject: sub, status: 'open',
-                chats: [{ sender: 'user', msg: msg, img: img || null, time: tid }]
-            }).then(() => {
-                alert("Ticket Submitted Successfully!");
-                document.getElementById('t-sub').value = ""; document.getElementById('t-msg').value = ""; document.getElementById('t-img').value = "";
+        function loadShop() {
+            db.ref('shop').on('value', s => {
+                const list = document.getElementById('shop-list'); list.innerHTML = "";
+                s.forEach(child => {
+                    const d = child.val();
+                    list.innerHTML += `
+                        <div class="card">
+                            <img src="${d.img}" style="width:100%; border-radius:10px;">
+                            <h2 style="margin-top:15px; color:gold">${d.name}</h2>
+                            <p style="margin:10px 0; color:#aaa">${d.buy}</p>
+                            <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:5px;">
+                                <small>PAYMENT:</small> <br> <b>${d.pay}</b>
+                            </div>
+                        </div>`;
+                });
             });
         }
 
-        function sendChat(tid, role) {
-            const input = document.getElementById('chat-in-' + tid);
-            if(!input.value) return;
-            const ref = db.ref('tickets/' + tid + '/chats');
-            ref.once('value', snap => {
-                const chats = snap.val() || [];
-                chats.push({ sender: role, msg: input.value, time: Date.now() });
-                ref.set(chats).then(() => input.value = "");
+        function loadManageList() {
+            const container = document.getElementById('master-manage-list'); container.innerHTML = "Loading Active Deployed Data...";
+            db.ref('data').once('value', s => {
+                container.innerHTML = "";
+                s.forEach(domain => {
+                    domain.forEach(type => {
+                        type.forEach(item => {
+                            container.innerHTML += `
+                                <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #222;">
+                                    <span>[${domain.key.toUpperCase()}] ${item.val().name}</span>
+                                    <i class="fa fa-trash" style="color:red; cursor:pointer" onclick="db.ref('data/${domain.key}/${type.key}/${item.key}').remove(); loadManageList();"></i>
+                                </div>`;
+                        });
+                    });
+                });
             });
         }
 
-        function renderTicketBox(snap, container, role) {
-            const t = snap.val();
-            let chatHtml = "";
-            t.chats.forEach(c => {
-                chatHtml += `
-                    <div class="msg ${c.sender}">
-                        ${c.msg}
-                        ${c.img ? `<br><img src="${c.img}" style="max-width:100%; border-radius:10px; margin-top:10px; border:1px solid #333;">` : ''}
-                    </div>`;
-            });
-
-            container.innerHTML += `
-                <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <span class="status-badge status-${t.status}">${t.status}</span>
-                        <span style="font-size:0.6rem; color:#444;">${t.email}</span>
-                        ${role === 'admin' ? `
-                            <div style="display:flex; gap:10px;">
-                                <i class="fa fa-check-circle" style="color:var(--success); cursor:pointer" onclick="db.ref('tickets/${t.tid}/status').set('closed')"></i>
-                                <i class="fa fa-trash" style="color:red; cursor:pointer" onclick="db.ref('tickets/${t.tid}').remove()"></i>
-                            </div>` : ''}
-                    </div>
-                    <h3 style="margin-bottom:15px; font-size:1.1rem;">${t.subject}</h3>
-                    <div class="chat-box" id="box-${t.tid}">${chatHtml}</div>
-                    <div style="display:flex; gap:10px;">
-                        <input type="text" id="chat-in-${t.tid}" placeholder="Type reply..." style="margin-bottom:0">
-                        <button class="btn-pro" style="width:100px; padding:10px;" onclick="sendChat('${t.tid}', '${role}')">SEND</button>
-                    </div>
-                </div>`;
+        function copyCode(id) {
+            const text = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(text);
+            Swal.fire({ toast: true, position: 'top-end', title: 'Code Copied!', icon: 'success', showConfirmButton: false, timer: 1500 });
         }
 
-        // --- Admin Deploy ---
-        function deploy() {
-            const cat = document.getElementById('a-cat').value;
-            db.ref('vault/' + cat).push({
-                name: document.getElementById('a-name').value,
-                link: document.getElementById('a-link').value,
-                desc: document.getElementById('a-desc').value
-            }).then(() => {
-                alert("Deployed Successfully!");
-                document.getElementById('a-name').value = ""; document.getElementById('a-link').value = ""; document.getElementById('a-desc').value = "";
-            });
-        }
-
-        // --- Session Management ---
+        // 5. BOOT
         auth.onAuthStateChanged(user => {
             if(user) {
                 document.getElementById('auth-screen').classList.add('hidden');
                 document.getElementById('app').classList.remove('hidden');
-                document.getElementById('user-display').innerText = "Logged in as: " + user.email;
-                document.getElementById('session-time').innerText = new Date().toLocaleString();
-                initSystem();
-
-                // Load My Tickets
-                db.ref('tickets').orderByChild('uid').equalTo(user.uid).on('value', s => {
-                    const list = document.getElementById('my-tickets-list');
-                    list.innerHTML = "";
-                    s.forEach(c => renderTicketBox(c, list, 'user'));
-                });
-
-                // Load Admin Panel
-                if(user.email === 'admin@gmail.com') {
-                    document.getElementById('admin-area').classList.remove('hidden');
-                    db.ref('tickets').on('value', s => {
-                        const list = document.getElementById('admin-tk-list');
-                        list.innerHTML = "";
-                        s.forEach(c => renderTicketBox(c, list, 'admin'));
-                    });
-                }
+                db.ref('system/ann').on('value', s => document.getElementById('ann-text').innerText = s.val() || "No active messages.");
+                if(user.email === ADMIN_EMAIL) document.getElementById('admin-nav').classList.remove('hidden');
             } else {
                 document.getElementById('auth-screen').classList.remove('hidden');
                 document.getElementById('app').classList.add('hidden');
